@@ -79,7 +79,7 @@ class Feedforward(nn.Module):
 
 
 class MultiHeadAttention(nn.Module):
-    def __init__(self, num_heads, head_size, n_embed, block_size):
+    def __init__(self, num_heads, head_size, n_embed):
         super().__init__()
         self.heads = nn.ModuleList([Head(head_size, n_embed, block_size) for _ in range(num_heads)])
         self.proj = nn.Linear(n_embed, n_embed)
@@ -115,10 +115,10 @@ class Head(nn.Module):
         return att
     
 class Block(nn.Module):
-    def __init__(self, n_embed, n_head, block_size):
+    def __init__(self, n_embed, n_head):
         super().__init__()
         head_size = n_embed // n_head
-        self.sa = MultiHeadAttention(n_head, head_size, n_embed, block_size)
+        self.sa = MultiHeadAttention(n_head, head_size, n_embed)
         self.ffwd = Feedforward(n_embed)
         self.ln1 = nn.LayerNorm(n_embed)
         self.ln2 = nn.LayerNorm(n_embed)
@@ -130,17 +130,16 @@ class Block(nn.Module):
 
 class BigramLanguageModel(nn.Module):
 
-    def __init__(self, vocab_size, n_embed, block_size):
+    def __init__(self, vocab_size, n_embed):
         super().__init__()
         self.token_embedding_table = nn.Embedding(vocab_size, n_embed)
         self.position_embedding_table = nn.Embedding(block_size, n_embed)
         self.blocks = nn.Sequential(
-            *[Block(n_embed, 4, block_size) for _ in range(n_head)],
+            *[Block(n_embed, 4) for _ in range(n_head)],
             nn.LayerNorm(n_embed)
         )
         self.lm_head = nn.Linear(n_embed, vocab_size)
         self.device = torch.device('cpu')
-        self.block_size = block_size
 
     def forward(self, idx, targets=None):
         B, T = idx.shape
@@ -161,7 +160,7 @@ class BigramLanguageModel(nn.Module):
 
     def generate(self, idx, max_new_tokens):
         for _ in range(max_new_tokens):
-            idx_cond = idx[:, -self.block_size:]
+            idx_cond = idx[:, -block_size:]
             logits, loss = self(idx_cond)
             logits = logits[:, -1, :]
             probs = F.softmax(logits, dim=-1)
@@ -195,7 +194,7 @@ def save_model(model, optimizer, epoch, loss):
 
 def load_model(model, optimizer, epoch):
     if model is None:
-        model = BigramLanguageModel(vocab_size, n_embed, block_size)
+        model = BigramLanguageModel(vocab_size, n_embed)
     if optimizer is None:
         optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     if epoch == "":
