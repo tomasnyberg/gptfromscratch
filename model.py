@@ -1,4 +1,3 @@
-# from util import get_data, get_batch, BigramLanguageModel, encode_text_with_encoder, decode_text_with_decoder, estimate_loss
 from torch.nn import functional as F
 import torch
 import torch.nn as nn
@@ -7,10 +6,7 @@ torch.manual_seed(420)
 # Hyperparams
 batch_size = 8
 block_size = 32
-max_iters = 5000
-eval_interval = 1000
 lr = 1e-3
-eval_iters = 200
 n_embed = 8
 dropout = 0.2
 n_head = 3
@@ -47,7 +43,7 @@ def get_data():
     return encoded_text, encoder, decoder
 
 
-def get_batch(data, batch_size, block_size):
+def get_batch(data):
     ix = torch.randint(len(data) - block_size, (batch_size,))
     x = torch.stack([data[i:i+block_size] for i in ix])
     y = torch.stack([data[i+1:i+block_size+1] for i in ix])
@@ -55,13 +51,13 @@ def get_batch(data, batch_size, block_size):
 
 
 @torch.no_grad()
-def estimate_loss(model, block_size, batch_size, train_data, val_data, eval_iters):
+def estimate_loss(model, train_data, val_data, eval_iters):
     out = {}
     model.eval()
     for data, name in [(train_data, 'train'), (val_data, 'val')]:
         losses = torch.zeros(eval_iters)
         for k in range(eval_iters):
-            X, Y = get_batch(data, batch_size, block_size)
+            X, Y = get_batch(data)
             _, loss = model(X, Y)
             losses[k] = loss.item()
         out[name] = losses.mean()
@@ -210,29 +206,3 @@ def load_model(model, optimizer, epoch):
     epoch = checkpoint['epoch']
     return model, optimizer, epoch
 
-
-if __name__ == '__main__':
-    data = torch.tensor(encoded_text, dtype=torch.long)
-
-    n = int(0.9 * len(data))
-    train_data, val_data = data[:n], data[n:]
-
-    xb, yb = get_batch(train_data, batch_size, block_size)
-    model = BigramLanguageModel(vocab_size, n_embed, block_size)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
-
-    epoch_to_load = ""
-    model, optimizer, epoch = load_model(model, optimizer, epoch_to_load)
-    for steps in range(max_iters):
-        if steps % 10 == 0:
-            print("Step:", steps)
-        if steps % eval_interval == 0:
-            losses = estimate_loss(model, block_size, batch_size, train_data, val_data, eval_iters)
-            print(f"Step: {steps}, Train loss: {losses['train']}, Val loss: {losses['val']}")
-            save_model(model, optimizer, steps + epoch, losses['val'])
-        xb, yb = get_batch(train_data, batch_size, block_size)
-        logits, loss = model(xb, yb)
-        optimizer.zero_grad(set_to_none=True)
-        loss.backward()
-        optimizer.step()
-    save_model(model, optimizer, steps + epoch, losses['val'])
