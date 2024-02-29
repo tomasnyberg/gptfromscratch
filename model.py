@@ -2,13 +2,13 @@ from util import get_data, get_batch, BigramLanguageModel, encode_text_with_enco
 import torch
 
 # Hyperparams
-batch_size = 32
-block_size = 8
+batch_size = 16
+block_size = 64
 max_iters = 5000
-eval_interval = 300
-lr = 0.001
+eval_interval = 1
+lr = 1e-4
 eval_iters = 200
-n_embed = 32
+n_embed = 16
 
 
 encoded_text, encoder, decoder = get_data()
@@ -28,20 +28,36 @@ train_data, val_data = data[:n], data[n:]
 xb, yb = get_batch(train_data, batch_size, block_size)
 model = BigramLanguageModel(vocab_size, n_embed, block_size)
 
-logits, loss = model(xb, yb)
-idx = torch.zeros((1,1), dtype=torch.long)
-optimizer = torch.optim.AdamW(model.parameters(), lr=0.001)
+checkpoint_path = 'bigram_language_model_checkpoint.pth'
+
+optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
+checkpoint = torch.load(checkpoint_path)
+model.load_state_dict(checkpoint['model_state_dict'])
+optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+epoch = checkpoint['epoch']
+loss = checkpoint['loss']
+
+print("Loaded model from checkpoint")
+print(f"Epoch: {epoch}, Loss: {loss}")
 
 
 for steps in range(max_iters):
-    if steps % eval_interval == 0:
-        losses = estimate_loss(model, block_size, batch_size, train_data, val_data, eval_iters)
-        print(f"Step: {steps}, Train loss: {losses['train']}, Val loss: {losses['val']}")
+    # if steps % eval_interval == 0:
+    losses = estimate_loss(model, block_size, batch_size, train_data, val_data, eval_iters)
+    print(f"Step: {steps}, Train loss: {losses['train']}, Val loss: {losses['val']}")
     xb, yb = get_batch(train_data, batch_size, block_size)
     logits, loss = model(xb, yb)
     optimizer.zero_grad(set_to_none=True)
     loss.backward()
     optimizer.step()
+
+checkpoint = {
+    'model_state_dict': model.state_dict(),
+    'optimizer_state_dict': optimizer.state_dict(),
+    'epoch': epoch + steps,
+    'loss': loss
+}
+torch.save(checkpoint, checkpoint_path)
 
 idx = torch.zeros((1,1), dtype=torch.long)
 print(decode(model.generate(idx, max_new_tokens=1000)[0].tolist()))
