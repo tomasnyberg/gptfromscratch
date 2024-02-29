@@ -1,6 +1,16 @@
 from util import get_data, get_batch, BigramLanguageModel, encode_text_with_encoder, decode_text_with_decoder
 import torch
 
+# Hyperparams
+batch_size = 32
+block_size = 8
+max_iters = 3000
+eval_interval = 300
+lr = 0.001
+eval_iters = 200
+
+
+
 encoded_text, encoder, decoder = get_data()
 vocab_size = len(encoder)
 
@@ -14,9 +24,6 @@ data = torch.tensor(encoded_text, dtype=torch.long)
 
 n = int(0.9 * len(data))
 train_data, val_data = data[:n], data[n:]
-
-batch_size = 4
-block_size = 8
 
 xb, yb = get_batch(train_data, batch_size, block_size)
 model = BigramLanguageModel(vocab_size)
