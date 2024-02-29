@@ -7,16 +7,12 @@ eval_iters = 200
 
 if __name__ == '__main__':
     data = torch.tensor(encoded_text, dtype=torch.long)
-
     n = int(0.9 * len(data))
     train_data, val_data = data[:n], data[n:]
-
     xb, yb = get_batch(train_data)
-    model = BigramLanguageModel(vocab_size, n_embed, block_size)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
 
-    epoch_to_load = ""
-    model, optimizer, epoch = load_model(model, optimizer, epoch_to_load)
+    epoch_to_load = "" # Choose what epoch to actually load
+    model, optimizer, epoch = load_model(None, None, epoch_to_load)
     for steps in range(max_iters):
         if steps % 10 == 0:
             print("Step:", steps)
