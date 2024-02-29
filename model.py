@@ -8,7 +8,7 @@ max_iters = 3000
 eval_interval = 300
 lr = 0.001
 eval_iters = 200
-
+n_embed = 32
 
 
 encoded_text, encoder, decoder = get_data()
@@ -26,7 +26,7 @@ n = int(0.9 * len(data))
 train_data, val_data = data[:n], data[n:]
 
 xb, yb = get_batch(train_data, batch_size, block_size)
-model = BigramLanguageModel(vocab_size)
+model = BigramLanguageModel(vocab_size, n_embed)
 
 logits, loss = model(xb, yb)
 idx = torch.zeros((1,1), dtype=torch.long)

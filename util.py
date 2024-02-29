@@ -60,12 +60,16 @@ def estimate_loss(model, block_size, batch_size, train_data, val_data, eval_iter
 
 class BigramLanguageModel(nn.Module):
 
-    def __init__(self, vocab_size):
+    def __init__(self, vocab_size, n_embd):
         super().__init__()
-        self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)
+        self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
+        self.lm_head = nn.Linear(n_embd, vocab_size)
 
     def forward(self, idx, targets=None):
-        logits = self.token_embedding_table(idx)
+        token_embeddings = self.token_embedding_table(idx)
+        logits = self.lm_head(token_embeddings)
+
+
         if targets is None:
             loss = None
         else:
