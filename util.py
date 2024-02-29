@@ -3,6 +3,9 @@ import torch.nn as nn
 from torch.nn import functional as F
 torch.manual_seed(420)
 
+dropout = 0.2
+n_head = 6
+
 
 def get_text():
     with open('input.txt', 'r') as f:
@@ -63,7 +66,8 @@ class Feedforward(nn.Module):
         self.net = nn.Sequential(
             nn.Linear(n_embed, 4*n_embed),
             nn.ReLU(),
-            nn.Linear(4*n_embed, n_embed)
+            nn.Linear(4*n_embed, n_embed),
+            nn.Dropout(dropout) 
         )
 
     def forward(self, x):
@@ -75,10 +79,11 @@ class MultiHeadAttention(nn.Module):
         super().__init__()
         self.heads = nn.ModuleList([Head(head_size, n_embed, block_size) for _ in range(num_heads)])
         self.proj = nn.Linear(n_embed, n_embed)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
         out = torch.cat([h(x) for h in self.heads], dim=-1)
-        return self.proj(out)
+        return self.dropout(self.proj(out))
 
 class Head(nn.Module):
     # Head of self-attention
@@ -89,6 +94,7 @@ class Head(nn.Module):
         self.query = nn.Linear(n_embed, head_size, bias=False)
         self.value = nn.Linear(n_embed, head_size, bias=False)
         self.register_buffer('tril', torch.tril(torch.ones(block_size, block_size)))
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
         B, T, C = x.shape
@@ -98,6 +104,7 @@ class Head(nn.Module):
         wei = q @ k.transpose(-2, -1) * (1.0 / C ** 0.5)
         wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf'))
         wei = F.softmax(wei, dim=-1)
+        wei = self.dropout(wei)
 
         v = self.value(x)
         att = wei @ v
@@ -124,9 +131,7 @@ class BigramLanguageModel(nn.Module):
         self.token_embedding_table = nn.Embedding(vocab_size, n_embed)
         self.position_embedding_table = nn.Embedding(block_size, n_embed)
         self.blocks = nn.Sequential(
-            Block(n_embed, 4, block_size),
-            Block(n_embed, 4, block_size),
-            Block(n_embed, 4, block_size),
+            *[Block(n_embed, 4, block_size) for _ in range(n_head)],
             nn.LayerNorm(n_embed)
         )
         self.lm_head = nn.Linear(n_embed, vocab_size)
