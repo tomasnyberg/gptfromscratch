@@ -1,8 +1,7 @@
-from util import BigramLanguageModel
 from model import vocab_size, n_embed, block_size, lr, decode, load_model
 import torch
 
-epoch_to_load = "4000"
+epoch_to_load = "1000"
 
 model, optimizer, _ = load_model(None, None, epoch_to_load)
 print(f"Loaded model from checkpoint {epoch_to_load}!")
