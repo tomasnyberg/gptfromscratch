@@ -1,11 +1,5 @@
-def get_text():
-    with open('input.txt', 'r') as f:
-        text = f.read()
-    return text
+from util import get_data
 
-def get_vocab(text):
-    return sorted(list(set(text)))
+encoded_text, encoder, decoder = get_data()
 
-text = get_text()
-vocab = get_vocab(text)
-print(''.join(vocab))
+print(encoded_text[:10])
