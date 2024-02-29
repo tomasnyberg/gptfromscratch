@@ -37,28 +37,21 @@ optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 epoch = checkpoint['epoch']
 loss = checkpoint['loss']
 
-print("Loaded model from checkpoint")
-print(f"Epoch: {epoch}, Loss: {loss}")
+if __name__ == '__main__':
+    for steps in range(max_iters):
+        # if steps % eval_interval == 0:
+        losses = estimate_loss(model, block_size, batch_size, train_data, val_data, eval_iters)
+        print(f"Step: {steps}, Train loss: {losses['train']}, Val loss: {losses['val']}")
+        xb, yb = get_batch(train_data, batch_size, block_size)
+        logits, loss = model(xb, yb)
+        optimizer.zero_grad(set_to_none=True)
+        loss.backward()
+        optimizer.step()
 
-
-for steps in range(max_iters):
-    # if steps % eval_interval == 0:
-    losses = estimate_loss(model, block_size, batch_size, train_data, val_data, eval_iters)
-    print(f"Step: {steps}, Train loss: {losses['train']}, Val loss: {losses['val']}")
-    xb, yb = get_batch(train_data, batch_size, block_size)
-    logits, loss = model(xb, yb)
-    optimizer.zero_grad(set_to_none=True)
-    loss.backward()
-    optimizer.step()
-
-checkpoint = {
-    'model_state_dict': model.state_dict(),
-    'optimizer_state_dict': optimizer.state_dict(),
-    'epoch': epoch + steps,
-    'loss': loss
-}
-torch.save(checkpoint, checkpoint_path)
-
-idx = torch.zeros((1,1), dtype=torch.long)
-print(decode(model.generate(idx, max_new_tokens=1000)[0].tolist()))
-print(loss.item())
+    checkpoint = {
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'epoch': epoch + steps,
+        'loss': loss
+    }
+    torch.save(checkpoint, checkpoint_path)
