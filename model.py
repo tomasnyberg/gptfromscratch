@@ -1,4 +1,4 @@
-from util import get_data, get_batch, BigramLanguageModel, encode_text_with_encoder, decode_text_with_decoder
+from util import get_data, get_batch, BigramLanguageModel, encode_text_with_encoder, decode_text_with_decoder, estimate_loss
 import torch
 
 # Hyperparams
@@ -32,23 +32,10 @@ logits, loss = model(xb, yb)
 idx = torch.zeros((1,1), dtype=torch.long)
 optimizer = torch.optim.AdamW(model.parameters(), lr=0.001)
 
-@torch.no_grad()
-def estimate_loss(model, block_size, batch_size):
-    out = {}
-    model.eval()
-    for data, name in [(train_data, 'train'), (val_data, 'val')]:
-        losses = torch.zeros(eval_iters)
-        for k in range(eval_iters):
-            X, Y = get_batch(data, batch_size, block_size)
-            _, loss = model(X, Y)
-            losses[k] = loss.item()
-        out[name] = losses.mean()
-    model.train()
-    return out
 
 for steps in range(max_iters):
     if steps % eval_interval == 0:
-        losses = estimate_loss(model, block_size, batch_size)
+        losses = estimate_loss(model, block_size, batch_size, train_data, val_data, eval_iters)
         print(f"Step: {steps}, Train loss: {losses['train']}, Val loss: {losses['val']}")
     xb, yb = get_batch(train_data, batch_size, block_size)
     logits, loss = model(xb, yb)
