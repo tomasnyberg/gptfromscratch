@@ -8,7 +8,7 @@ max_iters = 5000
 eval_interval = 1000
 lr = 1e-4
 eval_iters = 200
-n_embed = 16
+n_embed = 192
 
 
 encoded_text, encoder, decoder = get_data()
@@ -33,6 +33,10 @@ def save_model(model, optimizer, epoch, loss):
     torch.save(checkpoint, checkpoint_path(epoch))
 
 def load_model(model, optimizer, epoch):
+    if model is None:
+        model = BigramLanguageModel(vocab_size, n_embed, block_size)
+    if optimizer is None:
+        optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     if epoch == "":
         return model, optimizer, 0
     checkpoint = torch.load(checkpoint_path(epoch))
@@ -55,6 +59,8 @@ if __name__ == '__main__':
     epoch_to_load = ""
     model, optimizer, epoch = load_model(model, optimizer, epoch_to_load)
     for steps in range(max_iters):
+        if steps % 10 == 0:
+            print("Step:", steps)
         if steps % eval_interval == 0:
             losses = estimate_loss(model, block_size, batch_size, train_data, val_data, eval_iters)
             print(f"Step: {steps}, Train loss: {losses['train']}, Val loss: {losses['val']}")
@@ -64,3 +70,4 @@ if __name__ == '__main__':
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
         optimizer.step()
+    save_model(model, optimizer, steps + epoch, losses['val'])
