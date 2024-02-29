@@ -14,5 +14,7 @@ block_size = 8
 
 xb, yb = get_batch(train_data, batch_size, block_size)
 model = BigramLanguageModel(vocab_size)
-out = model(xb, yb)
-print(out)
+
+logits, loss = model(xb, yb)
+print(logits.shape)
+print(loss)
