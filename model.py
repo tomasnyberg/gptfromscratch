@@ -23,4 +23,15 @@ model = BigramLanguageModel(vocab_size)
 
 logits, loss = model(xb, yb)
 idx = torch.zeros((1,1), dtype=torch.long)
-print(decode(model.generate(idx, max_new_tokens=100)[0].tolist()))
+optimizer = torch.optim.AdamW(model.parameters(), lr=0.001)
+
+batch_size = 32
+
+for steps in range(1000):
+    xb, yb = get_batch(train_data, batch_size, block_size)
+    logits, loss = model(xb, yb)
+    optimizer.zero_grad(set_to_none=True)
+    loss.backward()
+    optimizer.step()
+
+print(loss.item())
