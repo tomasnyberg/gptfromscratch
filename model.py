@@ -32,13 +32,30 @@ logits, loss = model(xb, yb)
 idx = torch.zeros((1,1), dtype=torch.long)
 optimizer = torch.optim.AdamW(model.parameters(), lr=0.001)
 
-batch_size = 32
+@torch.no_grad()
+def estimate_loss(model, block_size, batch_size):
+    out = {}
+    model.eval()
+    for data, name in [(train_data, 'train'), (val_data, 'val')]:
+        losses = torch.zeros(eval_iters)
+        for k in range(eval_iters):
+            X, Y = get_batch(data, batch_size, block_size)
+            _, loss = model(X, Y)
+            losses[k] = loss.item()
+        out[name] = losses.mean()
+    model.train()
+    return out
 
-for steps in range(1000):
+for steps in range(max_iters):
+    if steps % eval_interval == 0:
+        losses = estimate_loss(model, block_size, batch_size)
+        print(f"Step: {steps}, Train loss: {losses['train']}, Val loss: {losses['val']}")
     xb, yb = get_batch(train_data, batch_size, block_size)
     logits, loss = model(xb, yb)
     optimizer.zero_grad(set_to_none=True)
     loss.backward()
     optimizer.step()
 
+idx = torch.zeros((1,1), dtype=torch.long)
+print(decode(model.generate(idx, max_new_tokens=100)[0].tolist()))
 print(loss.item())
