@@ -135,7 +135,7 @@ class Block(nn.Module):
         return x
 
 
-class BigramLanguageModel(nn.Module):
+class GPTLanguageModel(nn.Module):
 
     def __init__(self, vocab_size, n_embed):
         super().__init__()
@@ -205,7 +205,7 @@ def save_model(model, optimizer, epoch, loss):
 
 def load_model(model, optimizer, epoch):
     if model is None:
-        model = BigramLanguageModel(vocab_size, n_embed)
+        model = GPTLanguageModel(vocab_size, n_embed)
     if optimizer is None:
         optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     if epoch == "":

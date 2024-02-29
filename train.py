@@ -1,5 +1,5 @@
 import torch
-from model import encoded_text, get_batch, BigramLanguageModel, vocab_size, n_embed, block_size, lr, load_model, save_model, estimate_loss
+from model import encoded_text, get_batch, vocab_size, n_embed, block_size, lr, load_model, save_model, estimate_loss
 
 max_iters = 100
 eval_interval = 1000
