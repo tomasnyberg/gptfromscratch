@@ -26,7 +26,7 @@ n = int(0.9 * len(data))
 train_data, val_data = data[:n], data[n:]
 
 xb, yb = get_batch(train_data, batch_size, block_size)
-model = BigramLanguageModel(vocab_size, n_embed)
+model = BigramLanguageModel(vocab_size, n_embed, block_size)
 
 logits, loss = model(xb, yb)
 idx = torch.zeros((1,1), dtype=torch.long)

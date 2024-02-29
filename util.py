@@ -57,18 +57,47 @@ def estimate_loss(model, block_size, batch_size, train_data, val_data, eval_iter
     model.train()
     return out
 
+class Head(nn.Module):
+    # Head of self-attention
+
+    def __init__(self, head_size, n_embed, block_size):
+        super().__init__()
+        self.key = nn.Linear(n_embed, head_size, bias=False)
+        self.query = nn.Linear(n_embed, head_size, bias=False)
+        self.value = nn.Linear(n_embed, head_size, bias=False)
+        self.register_buffer('tril', torch.tril(torch.ones(block_size, block_size)))
+
+    def forward(self, x):
+        B, T, C = x.shape
+        k = self.key(x)
+        q = self.query(x)
+        # attention scores, "affinities"
+        wei = q @ k.transpose(-2, -1) * (1.0 / C ** 0.5)
+        wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf'))
+        wei = F.softmax(wei, dim=-1)
+
+        v = self.value(x)
+        att = wei @ v
+        return att
 
 class BigramLanguageModel(nn.Module):
 
-    def __init__(self, vocab_size, n_embd):
+    def __init__(self, vocab_size, n_embed, block_size):
         super().__init__()
-        self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
-        self.lm_head = nn.Linear(n_embd, vocab_size)
+        self.token_embedding_table = nn.Embedding(vocab_size, n_embed)
+        self.position_embedding_table = nn.Embedding(block_size, n_embed)
+        self.sa_head = Head(n_embed, n_embed, block_size)
+        self.lm_head = nn.Linear(n_embed, vocab_size)
+        self.device = torch.device('cpu')
+        self.block_size = block_size
 
     def forward(self, idx, targets=None):
+        B, T = idx.shape
         token_embeddings = self.token_embedding_table(idx)
-        logits = self.lm_head(token_embeddings)
-
+        pos_emb = self.position_embedding_table(torch.arange(T, device=self.device))
+        x = token_embeddings + pos_emb
+        x = self.sa_head(x)
+        logits = self.lm_head(x)
 
         if targets is None:
             loss = None
@@ -81,9 +110,11 @@ class BigramLanguageModel(nn.Module):
 
     def generate(self, idx, max_new_tokens):
         for _ in range(max_new_tokens):
-            logits, loss = self(idx)
+            idx_cond = idx[:, -self.block_size:]
+            logits, loss = self(idx_cond)
             logits = logits[:, -1, :]
             probs = F.softmax(logits, dim=-1)
             idx_next = torch.multinomial(probs, num_samples=1)
             idx = torch.cat((idx, idx_next), dim=1)
         return idx
+
