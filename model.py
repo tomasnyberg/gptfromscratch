@@ -11,6 +11,7 @@ n_embed = 8
 dropout = 0.2
 n_head = 3
 
+
 def get_text():
     with open('input.txt', 'r') as f:
         text = f.read()
@@ -64,6 +65,7 @@ def estimate_loss(model, train_data, val_data, eval_iters):
     model.train()
     return out
 
+
 class Feedforward(nn.Module):
     def __init__(self, n_embed):
         super().__init__()
@@ -71,7 +73,7 @@ class Feedforward(nn.Module):
             nn.Linear(n_embed, 4*n_embed),
             nn.ReLU(),
             nn.Linear(4*n_embed, n_embed),
-            nn.Dropout(dropout) 
+            nn.Dropout(dropout)
         )
 
     def forward(self, x):
@@ -81,13 +83,15 @@ class Feedforward(nn.Module):
 class MultiHeadAttention(nn.Module):
     def __init__(self, num_heads, head_size, n_embed):
         super().__init__()
-        self.heads = nn.ModuleList([Head(head_size, n_embed, block_size) for _ in range(num_heads)])
+        self.heads = nn.ModuleList(
+            [Head(head_size, n_embed, block_size) for _ in range(num_heads)])
         self.proj = nn.Linear(n_embed, n_embed)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
         out = torch.cat([h(x) for h in self.heads], dim=-1)
         return self.dropout(self.proj(out))
+
 
 class Head(nn.Module):
     # Head of self-attention
@@ -97,7 +101,8 @@ class Head(nn.Module):
         self.key = nn.Linear(n_embed, head_size, bias=False)
         self.query = nn.Linear(n_embed, head_size, bias=False)
         self.value = nn.Linear(n_embed, head_size, bias=False)
-        self.register_buffer('tril', torch.tril(torch.ones(block_size, block_size)))
+        self.register_buffer('tril', torch.tril(
+            torch.ones(block_size, block_size)))
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
@@ -113,7 +118,8 @@ class Head(nn.Module):
         v = self.value(x)
         att = wei @ v
         return att
-    
+
+
 class Block(nn.Module):
     def __init__(self, n_embed, n_head):
         super().__init__()
@@ -127,6 +133,7 @@ class Block(nn.Module):
         x = x + self.sa(self.ln1(x))
         x = x + self.ffwd(self.ln2(x))
         return x
+
 
 class BigramLanguageModel(nn.Module):
 
@@ -144,7 +151,8 @@ class BigramLanguageModel(nn.Module):
     def forward(self, idx, targets=None):
         B, T = idx.shape
         token_embeddings = self.token_embedding_table(idx)
-        pos_emb = self.position_embedding_table(torch.arange(T, device=self.device))
+        pos_emb = self.position_embedding_table(
+            torch.arange(T, device=self.device))
         x = token_embeddings + pos_emb
         x = self.blocks(x)
         logits = self.lm_head(x)
@@ -169,19 +177,21 @@ class BigramLanguageModel(nn.Module):
         return idx
 
 
-
-
 encoded_text, encoder, decoder = get_data()
 vocab_size = len(encoder)
+
 
 def encode(text):
     return encode_text_with_encoder(text, encoder)
 
-def decode(encoded_text): 
+
+def decode(encoded_text):
     return decode_text_with_decoder(encoded_text, decoder)
+
 
 def checkpoint_path(iter):
     return f'bigram_language_model_checkpoint_{iter}.pth'
+
 
 def save_model(model, optimizer, epoch, loss):
     checkpoint = {
@@ -191,6 +201,7 @@ def save_model(model, optimizer, epoch, loss):
         'loss': loss
     }
     torch.save(checkpoint, checkpoint_path(epoch))
+
 
 def load_model(model, optimizer, epoch):
     if model is None:
@@ -204,4 +215,3 @@ def load_model(model, optimizer, epoch):
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     epoch = checkpoint['epoch']
     return model, optimizer, epoch
-

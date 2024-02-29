@@ -11,14 +11,15 @@ if __name__ == '__main__':
     train_data, val_data = data[:n], data[n:]
     xb, yb = get_batch(train_data)
 
-    epoch_to_load = "" # Choose what epoch to actually load
+    epoch_to_load = ""  # Choose what epoch to actually load
     model, optimizer, epoch = load_model(None, None, epoch_to_load)
     for steps in range(max_iters):
         if steps % 10 == 0:
             print("Step:", steps)
         if steps % eval_interval == 0:
             losses = estimate_loss(model, train_data, val_data, eval_iters)
-            print(f"Step: {steps}, Train loss: {losses['train']}, Val loss: {losses['val']}")
+            print(
+                f"Step: {steps}, Train loss: {losses['train']}, Val loss: {losses['val']}")
             save_model(model, optimizer, steps + epoch, losses['val'])
         xb, yb = get_batch(train_data)
         logits, loss = model(xb, yb)
