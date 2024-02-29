@@ -57,6 +57,14 @@ def estimate_loss(model, block_size, batch_size, train_data, val_data, eval_iter
     model.train()
     return out
 
+class MultiHeadAttention(nn.Module):
+    def __init__(self, num_heads, head_size, n_embed, block_size):
+        super().__init__()
+        self.heads = nn.ModuleList([Head(head_size, n_embed, block_size) for _ in range(num_heads)])
+
+    def forward(self, x):
+        return torch.cat([h(x) for h in self.heads], dim=-1)
+
 class Head(nn.Module):
     # Head of self-attention
 
@@ -86,7 +94,7 @@ class BigramLanguageModel(nn.Module):
         super().__init__()
         self.token_embedding_table = nn.Embedding(vocab_size, n_embed)
         self.position_embedding_table = nn.Embedding(block_size, n_embed)
-        self.sa_head = Head(n_embed, n_embed, block_size)
+        self.sa_heads = MultiHeadAttention(4, n_embed//4, n_embed, block_size)
         self.lm_head = nn.Linear(n_embed, vocab_size)
         self.device = torch.device('cpu')
         self.block_size = block_size
@@ -96,7 +104,7 @@ class BigramLanguageModel(nn.Module):
         token_embeddings = self.token_embedding_table(idx)
         pos_emb = self.position_embedding_table(torch.arange(T, device=self.device))
         x = token_embeddings + pos_emb
-        x = self.sa_head(x)
+        x = self.sa_heads(x)
         logits = self.lm_head(x)
 
         if targets is None:

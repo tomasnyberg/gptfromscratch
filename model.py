@@ -4,7 +4,7 @@ import torch
 # Hyperparams
 batch_size = 32
 block_size = 8
-max_iters = 3000
+max_iters = 5000
 eval_interval = 300
 lr = 0.001
 eval_iters = 200
@@ -44,5 +44,5 @@ for steps in range(max_iters):
     optimizer.step()
 
 idx = torch.zeros((1,1), dtype=torch.long)
-print(decode(model.generate(idx, max_new_tokens=100)[0].tolist()))
+print(decode(model.generate(idx, max_new_tokens=1000)[0].tolist()))
 print(loss.item())
