@@ -10,7 +10,7 @@ lr = 1e-3
 n_embed = 8
 dropout = 0.2
 n_head = 3
-
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 def get_text():
     with open('input.txt', 'r') as f:
@@ -48,7 +48,7 @@ def get_batch(data):
     ix = torch.randint(len(data) - block_size, (batch_size,))
     x = torch.stack([data[i:i+block_size] for i in ix])
     y = torch.stack([data[i+1:i+block_size+1] for i in ix])
-    return x, y
+    return x.to(device), y.to(device)
 
 
 @torch.no_grad()
@@ -146,13 +146,12 @@ class GPTLanguageModel(nn.Module):
             nn.LayerNorm(n_embed)
         )
         self.lm_head = nn.Linear(n_embed, vocab_size)
-        self.device = torch.device('cpu')
 
     def forward(self, idx, targets=None):
         B, T = idx.shape
         token_embeddings = self.token_embedding_table(idx)
         pos_emb = self.position_embedding_table(
-            torch.arange(T, device=self.device))
+            torch.arange(T, device=device))
         x = token_embeddings + pos_emb
         x = self.blocks(x)
         logits = self.lm_head(x)
@@ -206,6 +205,7 @@ def save_model(model, optimizer, epoch, loss):
 def load_model(model, optimizer, epoch):
     if model is None:
         model = GPTLanguageModel(vocab_size, n_embed)
+        model = model.to(device)
     if optimizer is None:
         optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     if epoch == "":
@@ -214,4 +214,5 @@ def load_model(model, optimizer, epoch):
     model.load_state_dict(checkpoint['model_state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     epoch = checkpoint['epoch']
+    model = model.to(device)
     return model, optimizer, epoch
