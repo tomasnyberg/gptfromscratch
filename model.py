@@ -4,13 +4,14 @@ import torch.nn as nn
 torch.manual_seed(420)
 
 # Hyperparams
-batch_size = 8
-block_size = 32
-lr = 1e-3
-n_embed = 8
+batch_size = 32
+block_size = 128
+lr = 6e-4
+n_embed = 192
 dropout = 0.2
-n_head = 3
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+n_head = 6
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print("We will use the following device:", device)
 
 def get_text():
     with open('input.txt', 'r') as f:
