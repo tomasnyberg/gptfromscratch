@@ -1,3 +1,5 @@
 input.txt
 __pycache__/
 *.pth
+*.json
+fbinput.txt
