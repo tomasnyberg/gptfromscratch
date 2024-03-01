@@ -13,6 +13,7 @@ n_head = 6
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print("We will use the following device:", device)
 
+
 def get_text():
     with open('input.txt', 'r') as f:
         text = f.read()
@@ -21,8 +22,6 @@ def get_text():
 
 def get_vocab(text):
     return sorted(list(set(text)))
-
-# Character level tokenizer
 
 
 def encoder_decoder(vocab):
