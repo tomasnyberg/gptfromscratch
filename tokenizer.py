@@ -29,14 +29,25 @@ def compress(tokens):
     num_merges = vocab_size - 256
     ids = list(tokens)
 
-    print(len(ids))
     merges = {}
     for i in range(num_merges):
         pair = most_frequent_pair(ids)
         merges[pair] = 256 + i
         ids = replace(ids, pair, merges[pair])
 
-    print(ids)
-    print(len(ids))
+    return ids, merges
 
-compress(blogtokens)
+def vocab(tokens, merges):
+    result = {idx: bytes([idx]) for idx in range(256)}
+    for (p0, p1), idx in merges.items():
+        result[idx] = result[p0] + result[p1]
+    return result
+
+def decode(ids, vocab):
+    return b''.join(vocab[id] for id in ids)
+
+encoded, merges = compress(tokens)
+voc = vocab(tokens, merges)
+decoded = decode(encoded, voc)
+print(decoded)
+
