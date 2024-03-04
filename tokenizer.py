@@ -47,7 +47,18 @@ def decode(compressed_tokens, merges):
         vocab[idx] = vocab[p0] + vocab[p1]
     return b''.join(vocab[token] for token in compressed_tokens).decode('utf8', errors='replace')
 
+def encode(text, merges):
+    inted = list(map(int, text.encode('utf8')))
+    for (p0, p1), idx in merges.items():
+        inted = replace(inted, (p0, p1), idx)
+    return inted
 
 encoded, merges = compress(tokens)
+
+encoded = encode(blogtext, merges)
 decoded = decode(encoded, merges)
-print(decoded)
+print(blogtext == decoded)
+
+# print(len(blogtext))
+# print(len(encode(blogtext, merges)))
+# print(len(decode(, merges)))
