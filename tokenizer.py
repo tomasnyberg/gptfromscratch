@@ -45,7 +45,7 @@ def decode(compressed_tokens, merges):
     vocab = {idx: bytes([idx]) for idx in range(256)}
     for (p0, p1), idx in merges.items():
         vocab[idx] = vocab[p0] + vocab[p1]
-    return b''.join(vocab[token] for token in compressed_tokens)
+    return b''.join(vocab[token] for token in compressed_tokens).decode('utf8', errors='replace')
 
 
 encoded, merges = compress(tokens)
