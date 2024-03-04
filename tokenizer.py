@@ -5,12 +5,14 @@ with open('blogpost.txt', 'r') as f:
     blogtext = f.read()
     blogtokens = list(map(int, blogtext.encode('utf8')))
 
+
 def most_frequent_pair(s):
     counts = {}
     for i in range(len(s) - 1):
         pair = (s[i], s[i+1])
         counts[pair] = counts.get(pair, 0) + 1
     return max(counts, key=counts.get)
+
 
 def replace(tokens, pair, replacement):
     new_tokens = []
@@ -23,6 +25,7 @@ def replace(tokens, pair, replacement):
             new_tokens.append(tokens[i])
             i += 1
     return new_tokens
+
 
 def compress(tokens):
     vocab_size = 276
@@ -37,17 +40,14 @@ def compress(tokens):
 
     return ids, merges
 
-def vocab(tokens, merges):
-    result = {idx: bytes([idx]) for idx in range(256)}
-    for (p0, p1), idx in merges.items():
-        result[idx] = result[p0] + result[p1]
-    return result
 
-def decode(ids, vocab):
-    return b''.join(vocab[id] for id in ids)
+def decode(compressed_tokens, merges):
+    vocab = {idx: bytes([idx]) for idx in range(256)}
+    for (p0, p1), idx in merges.items():
+        vocab[idx] = vocab[p0] + vocab[p1]
+    return b''.join(vocab[token] for token in compressed_tokens)
+
 
 encoded, merges = compress(tokens)
-voc = vocab(tokens, merges)
-decoded = decode(encoded, voc)
+decoded = decode(encoded, merges)
 print(decoded)
-
