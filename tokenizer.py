@@ -3,20 +3,20 @@ def get_text(filename):
         return f.read()
 
 
-def most_frequent_pair(s):
+def most_frequent_pair(s, count=1):
     counts = {}
     for i in range(len(s) - 1):
         pair = (s[i], s[i+1])
         counts[pair] = counts.get(pair, 0) + 1
-    return max(counts, key=counts.get)
+    return sorted(counts, key=counts.get, reverse=True)[:count]
 
 
-def replace(tokens, pair, replacement):
+def replace(tokens, merges):
     new_tokens = []
     i = 0
     while i < len(tokens):
-        if i < len(tokens) - 1 and (tokens[i], tokens[i+1]) == pair:
-            new_tokens.append(replacement)
+        if i < len(tokens) - 1 and (tokens[i], tokens[i+1]) in merges:
+            new_tokens.append(merges[(tokens[i], tokens[i+1])])
             i += 2
         else:
             new_tokens.append(tokens[i])
@@ -28,13 +28,13 @@ def compress(tokens, vocab_size=276):
     assert vocab_size > 256, "Vocab size must be greater than 256."
     num_merges = vocab_size - 256
     ids = list(tokens)
-
+    per_time = 3
     merges = {}
-    for i in range(num_merges):
-        pair = most_frequent_pair(ids)
-        merges[pair] = 256 + i
-        ids = replace(ids, pair, merges[pair])
-
+    for i in range(int(num_merges/per_time) + 1):
+        pairs = most_frequent_pair(ids, per_time)
+        for idx, pair in enumerate(pairs):
+            merges[pair] = 256 + i*per_time + idx
+        ids = replace(ids, merges)
     return ids, merges
 
 
@@ -47,9 +47,7 @@ def decode(compressed_tokens, merges):
 
 def encode(text, merges):
     inted = list(map(int, text.encode('utf8')))
-    for (p0, p1), idx in merges.items():
-        inted = replace(inted, (p0, p1), idx)
-    return inted
+    return replace(inted, merges)
 
 
 class BasicTokenizer:
@@ -91,7 +89,7 @@ class BasicTokenizer:
 
 
 bt = BasicTokenizer()
-text = get_text("txtfiles/blogpost.txt")
+text = get_text("txtfiles/shortinput.txt")
 bt.train(text, 500)
 bt.visualize_compression("txtfiles/tokens.txt")
 encoded = bt.encode(text)
