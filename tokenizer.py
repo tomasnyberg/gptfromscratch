@@ -27,8 +27,8 @@ def replace(tokens, pair, replacement):
     return new_tokens
 
 
-def compress(tokens):
-    vocab_size = 276
+def compress(tokens, vocab_size=276):
+    assert vocab_size > 256, "Vocab size must be greater than 256."
     num_merges = vocab_size - 256
     ids = list(tokens)
 
@@ -47,18 +47,34 @@ def decode(compressed_tokens, merges):
         vocab[idx] = vocab[p0] + vocab[p1]
     return b''.join(vocab[token] for token in compressed_tokens).decode('utf8', errors='replace')
 
+
 def encode(text, merges):
     inted = list(map(int, text.encode('utf8')))
     for (p0, p1), idx in merges.items():
         inted = replace(inted, (p0, p1), idx)
     return inted
 
-encoded, merges = compress(tokens)
 
-encoded = encode(blogtext, merges)
-decoded = decode(encoded, merges)
-print(blogtext == decoded)
+class BasicTokenizer:
 
-# print(len(blogtext))
-# print(len(encode(blogtext, merges)))
-# print(len(decode(, merges)))
+    def train(self, text, vocab_size):
+        self.text = text
+        self.vocab_size = vocab_size
+        self.ids, self.merges = compress(list(map(int, text.encode('utf8'))))
+
+    def encode(self, text):
+        assert hasattr(
+            self, 'merges'), "You must train the tokenizer before encoding."
+        return encode(text, self.merges)
+
+    def decode(self, tokens):
+        assert hasattr(
+            self, 'merges'), "You must train the tokenizer before encoding."
+        return decode(tokens, self.merges)
+
+
+bt = BasicTokenizer()
+bt.train(blogtext, 276)
+encoded = bt.encode(blogtext)
+decoded = bt.decode(encoded)
+assert blogtext == decoded
