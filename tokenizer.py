@@ -46,13 +46,12 @@ def compress(text, vocab_size=276):
     ids = [list(chunk.encode('utf8')) for chunk in chunks]
     per_time = 1
     merges = {}
-    for i in range(int(num_merges/per_time) + 1):
+    for i in range(num_merges):
         counts = {}
         for chunked_id in ids:
             count_frequencies(chunked_id, counts)
-        pairs = sorted(counts, key=counts.get, reverse=True)[:per_time]
-        for idx, pair in enumerate(pairs):
-            merges[pair] = 256 + i*per_time + idx
+        pair = max(counts, key=counts.get)
+        merges[pair] = 256 + i
         for i, chunked_id in enumerate(ids):
             ids[i] = replace(chunked_id, merges)
     ids = [item for sublist in ids for item in sublist]
@@ -66,6 +65,7 @@ class Tokenizer:
         self.vocab_size = vocab_size
         self.ids, self.merges = compress(
             text, vocab_size)
+        self.vocab_size = vocab_size
 
     def load(self, filename):
         result = {}
@@ -78,6 +78,7 @@ class Tokenizer:
                     result[(int(to[0]), int(to[1]))] = int(fr)
                 line = f.readline()
         self.merges = result
+        self.vocab_size = 256 + len(result)
 
     def encode(self, text):
         assert hasattr(
