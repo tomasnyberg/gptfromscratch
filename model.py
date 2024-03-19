@@ -5,43 +5,13 @@ torch.manual_seed(420)
 
 # Hyperparams
 batch_size = 32
-block_size = 128
+block_size = 64
 lr = 6e-4
 n_embed = 192
 dropout = 0.2
-n_head = 6
+n_head = 1
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print("We will use the following device:", device)
-
-
-def get_text():
-    with open('input.txt', 'r') as f:
-        text = f.read()
-    return text
-
-
-def get_vocab(text):
-    return sorted(list(set(text)))
-
-
-def encoder_decoder(vocab):
-    return {c: i for i, c in enumerate(vocab)}, {i: c for i, c in enumerate(vocab)}
-
-
-def encode_text_with_encoder(text, encoder):
-    return [encoder[c] for c in text]
-
-
-def decode_text_with_decoder(encoded_text, decoder):
-    return ''.join([decoder[i] for i in encoded_text])
-
-
-def get_data():
-    text = get_text()
-    vocab = get_vocab(text)
-    encoder, decoder = encoder_decoder(vocab)
-    encoded_text = encode_text_with_encoder(text, encoder)
-    return encoded_text, encoder, decoder
 
 
 def get_batch(data):
@@ -176,18 +146,6 @@ class GPTLanguageModel(nn.Module):
         return idx
 
 
-encoded_text, encoder, decoder = get_data()
-vocab_size = len(encoder)
-
-
-def encode(text):
-    return encode_text_with_encoder(text, encoder)
-
-
-def decode(encoded_text):
-    return decode_text_with_decoder(encoded_text, decoder)
-
-
 def checkpoint_path(iter):
     return f'bigram_language_model_checkpoint_{iter}.pth'
 
@@ -202,9 +160,9 @@ def save_model(model, optimizer, epoch, loss):
     torch.save(checkpoint, checkpoint_path(epoch))
 
 
-def load_model(model, optimizer, epoch):
+def load_model(model, optimizer, epoch, tokenizer):
     if model is None:
-        model = GPTLanguageModel(vocab_size, n_embed)
+        model = GPTLanguageModel(tokenizer.vocab_size, n_embed)
         model = model.to(device)
     if optimizer is None:
         optimizer = torch.optim.AdamW(model.parameters(), lr=lr)

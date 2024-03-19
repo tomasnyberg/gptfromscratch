@@ -115,6 +115,9 @@ class Tokenizer:
         else:
             with open(filename, 'w') as f:
                 f.write(printstr)
+        
+    def save(self, filename):
+        self.visualize_compression(filename, False)
 
 
 def test_replace():
