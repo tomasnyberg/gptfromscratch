@@ -36,13 +36,6 @@ def replace(tokens, merges):
     return new_tokens
 
 
-def test_replace():
-    tokens = [1, 2, 3, 4, 5, 6]
-    merges = {(1, 2): 7, (7, 3): 8}
-    assert replace(tokens, merges) == [
-        8, 4, 5, 6], f"Expected [8,4,5,6], got {replace(tokens, merges)}"
-
-
 def compress(tokens, vocab_size=276):
     assert vocab_size > 256, "Vocab size must be greater than 256."
     num_merges = vocab_size - 256
@@ -123,6 +116,27 @@ class BasicTokenizer:
                 f.write(printstr)
 
 
+def test_replace():
+    tokens = [1, 2, 3, 4, 5, 6]
+    merges = {(1, 2): 7, (7, 3): 8}
+    assert replace(tokens, merges) == [
+        8, 4, 5, 6], f"Expected [8,4,5,6], got {replace(tokens, merges)}"
+
+
+def test_encode_decode():
+    # Test that we are able to something with merges over merged tokens and then decode it back.
+    # In this case we compress the whole string "ABCDEF" to just the token [260] and then test
+    # that we get it back properly-
+    text = "ABCDEF"
+    merges = {(65, 66): 256, (256, 67): 257, (257, 68)
+               : 258, (258, 69): 259, (259, 70): 260}
+    encoded = encode(text, merges)
+    assert (len(encoded) == 1)
+    decoded = decode(encoded, merges)
+    assert decoded == text, f"Expected {text}, got {decoded}"
+
+
+test_encode_decode()
 test_replace()
 
 bt = BasicTokenizer()
