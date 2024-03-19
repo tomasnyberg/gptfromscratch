@@ -8,6 +8,7 @@ def count_frequencies(s, counts):
         pair = (s[i], s[i+1])
         counts[pair] = counts.get(pair, 0) + 1
 
+
 def replace(tokens, merges):
     new_tokens = []
     i = 0
@@ -50,18 +51,6 @@ def compress(tokens, vocab_size=276):
     return ids, merges
 
 
-def decode(compressed_tokens, merges):
-    vocab = {idx: bytes([idx]) for idx in range(256)}
-    for (p0, p1), idx in merges.items():
-        vocab[idx] = vocab[p0] + vocab[p1]
-    return b''.join(vocab[token] for token in compressed_tokens).decode('utf8', errors='replace')
-
-
-def encode(text, merges):
-    inted = list(map(int, text.encode('utf8')))
-    return replace(inted, merges)
-
-
 class BasicTokenizer:
 
     def train(self, text, vocab_size):
@@ -85,12 +74,16 @@ class BasicTokenizer:
     def encode(self, text):
         assert hasattr(
             self, 'merges'), "You must train the tokenizer before encoding."
-        return encode(text, self.merges)
+        inted = list(map(int, text.encode('utf8')))
+        return replace(inted, self.merges)
 
     def decode(self, tokens):
         assert hasattr(
             self, 'merges'), "You must train the tokenizer before encoding."
-        return decode(tokens, self.merges)
+        vocab = {idx: bytes([idx]) for idx in range(256)}
+        for (p0, p1), idx in self.merges.items():
+            vocab[idx] = vocab[p0] + vocab[p1]
+        return b''.join(vocab[token] for token in tokens).decode('utf8', errors='replace')
 
     def visualize_compression(self, filename=None, nice_print=True):
         assert hasattr(
@@ -125,13 +118,15 @@ def test_replace():
 def test_encode_decode():
     # Test that we are able to something with merges over merged tokens and then decode it back.
     # In this case we compress the whole string "ABCDEF" to just the token [260] and then test
-    # that we get it back properly-
+    # that we get it back properly
     text = "ABCDEF"
     merges = {(65, 66): 256, (256, 67): 257, (257, 68)
                : 258, (258, 69): 259, (259, 70): 260}
-    encoded = encode(text, merges)
+    bt = BasicTokenizer()
+    bt.merges = merges
+    encoded = bt.encode(text)
     assert (len(encoded) == 1)
-    decoded = decode(encoded, merges)
+    decoded = bt.decode(encoded)
     assert decoded == text, f"Expected {text}, got {decoded}"
 
 
@@ -143,7 +138,8 @@ bt = BasicTokenizer()
 text = get_text("txtfiles/shortinput.txt")
 bt.train(text, 300)
 encoded = bt.encode(text)
-print(f"Text length: {len(text)}, Tokenized text length: {len(encoded)}, Compression ratio: {len(encoded)/len(text)}")
+print(
+    f"Text length: {len(text)}, Tokenized text length: {len(encoded)}, Compression ratio: {len(encoded)/len(text)}")
 print(len(text))
 print(len(encoded))
 decoded = bt.decode(encoded)
