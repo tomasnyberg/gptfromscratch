@@ -3,3 +3,4 @@ __pycache__/
 *.pth
 *.json
 fbinput.txt
+tokens.txt

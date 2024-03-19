@@ -60,7 +60,7 @@ class BasicTokenizer:
     def train(self, text, vocab_size):
         self.text = text
         self.vocab_size = vocab_size
-        self.ids, self.merges = compress(list(map(int, text.encode('utf8'))))
+        self.ids, self.merges = compress(list(map(int, text.encode('utf8'))), vocab_size)
 
     def encode(self, text):
         assert hasattr(
@@ -78,22 +78,22 @@ class BasicTokenizer:
         vocab = {idx: idx for idx in range(256)}
         for (p0, p1), idx in self.merges.items():
             vocab[idx] = (p0, p1)
-            # vocab[idx] = vocab[p0] + vocab[p1]
         def find(x):
-            print(x)
             if x <= 255:
-                return repr(bytes([x]).decode('utf8', errors='replace'))
+                decoded = bytes([x]).decode('utf8', errors='replace')
+                return (repr(decoded),) if not decoded.isprintable() else (decoded,)
             return find(vocab[x][0]) + find(vocab[x][1])
-        # print(find(275))
-        print(vocab)
-        for k, v in vocab.items():
-            print(k, find(k))
+        printstr = '\n'.join([f"{k} -> {''.join(find(k))}" for k in vocab])
+        if not filename:
+            print(printstr)
+        else:
+            with open(filename, 'w') as f:
+                f.write(printstr)
 
 
 bt = BasicTokenizer()
-bt.train(blogtext, 276)
-print(bt.merges)
-bt.visualize_compression()
+bt.train(blogtext, 500)
+bt.visualize_compression("tokens.txt")
 encoded = bt.encode(blogtext)
 decoded = bt.decode(encoded)
 assert blogtext == decoded
