@@ -28,9 +28,10 @@ def compress(tokens, vocab_size=276):
     assert vocab_size > 256, "Vocab size must be greater than 256."
     num_merges = vocab_size - 256
     ids = list(tokens)
-    per_time = 3
+    per_time = 5
     merges = {}
     for i in range(int(num_merges/per_time) + 1):
+        print((i+1)*per_time)
         pairs = most_frequent_pair(ids, per_time)
         for idx, pair in enumerate(pairs):
             merges[pair] = 256 + i*per_time + idx
@@ -58,6 +59,18 @@ class BasicTokenizer:
         self.ids, self.merges = compress(
             list(map(int, text.encode('utf8'))), vocab_size)
 
+    def load(self, filename):
+        result = {}
+        with open(filename, 'r') as f:
+            line = f.readline()
+            while line:
+                fr, to = line.split(' -> ')
+                to = to.replace('(', '').replace(')', '').split(',')
+                if int(fr) >= 256:
+                    result[(int(to[0]), int(to[1]))] = int(fr)
+                line = f.readline()
+        self.merges = result
+
     def encode(self, text):
         assert hasattr(
             self, 'merges'), "You must train the tokenizer before encoding."
@@ -68,7 +81,7 @@ class BasicTokenizer:
             self, 'merges'), "You must train the tokenizer before encoding."
         return decode(tokens, self.merges)
 
-    def visualize_compression(self, filename=None):
+    def visualize_compression(self, filename=None, nice_print=True):
         assert hasattr(
             self, 'merges'), "You must train the tokenizer before visualizing."
         vocab = {idx: idx for idx in range(256)}
@@ -80,7 +93,10 @@ class BasicTokenizer:
                 decoded = bytes([x]).decode('utf8', errors='replace')
                 return (repr(decoded),) if not decoded.isprintable() else (decoded,)
             return find(vocab[x][0]) + find(vocab[x][1])
-        printstr = '\n'.join([f"{k} -> {''.join(find(k))}" for k in vocab])
+        if nice_print:
+            printstr = '\n'.join([f"{k} -> {''.join(find(k))}" for k in vocab])
+        else:
+            printstr = '\n'.join([f"{k} -> {vocab[k]}" for k in vocab])
         if not filename:
             print(printstr)
         else:
@@ -89,9 +105,10 @@ class BasicTokenizer:
 
 
 bt = BasicTokenizer()
-text = get_text("txtfiles/shortinput.txt")
-bt.train(text, 500)
-bt.visualize_compression("txtfiles/tokens.txt")
+text = get_text("txtfiles/input.txt")
+# bt.train(text, 300)
+# bt.visualize_compression("txtfiles/uglytokens.txt", nice_print=False)
+bt.load("txtfiles/uglytokens.txt")
 encoded = bt.encode(text)
 decoded = bt.decode(encoded)
 assert text == decoded
