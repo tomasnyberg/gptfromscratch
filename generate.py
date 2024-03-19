@@ -12,4 +12,5 @@ print(f"Loaded model from checkpoint {epoch_to_load}!")
 print("Generating shakespeare impression...")
 print("--------------\n\n")
 idx = torch.zeros((1, 1), dtype=torch.long).to(device)
-print(tokenizer.decode(model.generate(idx, max_new_tokens=1000)[0].tolist()))
+for token in model.generate(idx, max_new_tokens=1000):
+    print(tokenizer.decode(token[0].tolist()),end="")
