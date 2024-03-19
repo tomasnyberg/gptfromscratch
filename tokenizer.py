@@ -3,13 +3,10 @@ def get_text(filename):
         return f.read()
 
 
-def most_frequent_pair(s, count=1):
-    counts = {}
+def count_frequencies(s, counts):
     for i in range(len(s) - 1):
         pair = (s[i], s[i+1])
         counts[pair] = counts.get(pair, 0) + 1
-    return sorted(counts, key=counts.get, reverse=True)[:count]
-
 
 def replace(tokens, merges):
     new_tokens = []
@@ -43,8 +40,10 @@ def compress(tokens, vocab_size=276):
     per_time = 1
     merges = {}
     for i in range(int(num_merges/per_time) + 1):
-        print((i+1)*per_time)
-        pairs = most_frequent_pair(ids, per_time)
+        # print((i+1)*per_time)
+        counts = {}
+        count_frequencies(ids, counts)
+        pairs = sorted(counts, key=counts.get, reverse=True)[:per_time]
         for idx, pair in enumerate(pairs):
             merges[pair] = 256 + i*per_time + idx
         ids = replace(ids, merges)
@@ -140,10 +139,11 @@ test_encode_decode()
 test_replace()
 
 bt = BasicTokenizer()
-bt.load("txtfiles/1500shakespearetokens.txt")
-text = get_text("txtfiles/input.txt")
-# # bt.train(text, 1500)
+# bt.load("txtfiles/1500shakespearetokens.txt")
+text = get_text("txtfiles/shortinput.txt")
+bt.train(text, 300)
 encoded = bt.encode(text)
+print(f"Text length: {len(text)}, Tokenized text length: {len(encoded)}, Compression ratio: {len(encoded)/len(text)}")
 print(len(text))
 print(len(encoded))
 decoded = bt.decode(encoded)
