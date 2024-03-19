@@ -115,7 +115,7 @@ class Tokenizer:
         else:
             with open(filename, 'w') as f:
                 f.write(printstr)
-        
+
     def save(self, filename):
         self.visualize_compression(filename, False)
 
@@ -142,17 +142,5 @@ def test_encode_decode():
     assert decoded == text, f"Expected {text}, got {decoded}"
 
 
-# test_encode_decode()
-# test_replace()
-
-# bt = Tokenizer()
-# # bt.load("txtfiles/1500shakespearetokens.txt")
-# text = get_text("txtfiles/shortinput.txt")
-# bt.train(text, 500)
-# encoded = bt.encode(text)
-# print(
-#     f"Text length: {len(text)}, Tokenized text length: {len(encoded)}, Compression ratio: {len(encoded)/len(text)}")
-# print(len(text))
-# print(len(encoded))
-# decoded = bt.decode(encoded)
-# assert text == decoded
+test_encode_decode()
+test_replace()
