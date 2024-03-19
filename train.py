@@ -1,10 +1,10 @@
 import torch
-from model import get_batch, n_embed, block_size, lr, load_model, save_model, estimate_loss
+from model import get_batch, load_model, save_model, estimate_loss
 from tokenizer import Tokenizer
 
-INPUT_TEXT = "txtfiles/shortinput.txt"
+INPUT_TEXT = "txtfiles/input.txt"
 TOKENIZER_INIT = "txtfiles/uglytokens.txt"
-VOCAB_SIZE = 300
+VOCAB_SIZE = 500
 max_iters = 5000
 eval_interval = 1000
 eval_iters = 200
@@ -27,7 +27,7 @@ def init_tokenizer(load=True, save=False):
     return tokenizer
 
 if __name__ == '__main__':
-    tokenizer = init_tokenizer(load=False, save=True)
+    tokenizer = init_tokenizer(load=True, save=False)
     tokenized_text = tokenizer.encode(get_input_text())
     data = torch.tensor(tokenized_text, dtype=torch.long)
     n = int(0.9 * len(data))
