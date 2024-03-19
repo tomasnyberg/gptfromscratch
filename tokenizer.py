@@ -14,21 +14,40 @@ def most_frequent_pair(s, count=1):
 def replace(tokens, merges):
     new_tokens = []
     i = 0
+    curr = None
     while i < len(tokens):
-        if i < len(tokens) - 1 and (tokens[i], tokens[i+1]) in merges:
-            new_tokens.append(merges[(tokens[i], tokens[i+1])])
-            i += 2
+        if curr == None:
+            if i < len(tokens) - 1 and (tokens[i], tokens[i+1]) in merges:
+                curr = merges[(tokens[i], tokens[i+1])]
+                i += 2
+            else:
+                new_tokens.append(tokens[i])
+                i += 1
         else:
-            new_tokens.append(tokens[i])
-            i += 1
+            tup = (curr, tokens[i])
+            if tup in merges:
+                curr = merges[tup]
+                i += 1
+            else:
+                new_tokens.append(curr)
+                curr = None
+    if curr != None:
+        new_tokens.append(curr)
     return new_tokens
+
+
+def test_replace():
+    tokens = [1, 2, 3, 4, 5, 6]
+    merges = {(1, 2): 7, (7, 3): 8}
+    assert replace(tokens, merges) == [
+        8, 4, 5, 6], f"Expected [8,4,5,6], got {replace(tokens, merges)}"
 
 
 def compress(tokens, vocab_size=276):
     assert vocab_size > 256, "Vocab size must be greater than 256."
     num_merges = vocab_size - 256
     ids = list(tokens)
-    per_time = 5
+    per_time = 1
     merges = {}
     for i in range(int(num_merges/per_time) + 1):
         print((i+1)*per_time)
@@ -104,11 +123,14 @@ class BasicTokenizer:
                 f.write(printstr)
 
 
+test_replace()
+
 bt = BasicTokenizer()
+bt.load("txtfiles/1500shakespearetokens.txt")
 text = get_text("txtfiles/input.txt")
-# bt.train(text, 300)
-# bt.visualize_compression("txtfiles/uglytokens.txt", nice_print=False)
-bt.load("txtfiles/uglytokens.txt")
+# # bt.train(text, 1500)
 encoded = bt.encode(text)
+print(len(text))
+print(len(encoded))
 decoded = bt.decode(encoded)
 assert text == decoded
