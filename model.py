@@ -5,11 +5,11 @@ torch.manual_seed(420)
 
 # Hyperparams
 batch_size = 32
-block_size = 64
+block_size = 128
 lr = 6e-4
-n_embed = 192
+n_embed = 384
 dropout = 0.2
-n_head = 1
+n_head = 6
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print("We will use the following device:", device)
 
