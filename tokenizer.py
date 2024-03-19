@@ -1,3 +1,8 @@
+import regex as re
+
+GPT2_SPLIT_PATTERN = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+
+
 def get_text(filename):
     with open(filename, 'r') as f:
         return f.read()
@@ -34,30 +39,33 @@ def replace(tokens, merges):
     return new_tokens
 
 
-def compress(tokens, vocab_size=276):
+def compress(text, vocab_size=276):
     assert vocab_size > 256, "Vocab size must be greater than 256."
     num_merges = vocab_size - 256
-    ids = list(tokens)
+    chunks = re.findall(GPT2_SPLIT_PATTERN, text)
+    ids = [list(chunk.encode('utf8')) for chunk in chunks]
     per_time = 1
     merges = {}
     for i in range(int(num_merges/per_time) + 1):
-        # print((i+1)*per_time)
         counts = {}
-        count_frequencies(ids, counts)
+        for chunked_id in ids:
+            count_frequencies(chunked_id, counts)
         pairs = sorted(counts, key=counts.get, reverse=True)[:per_time]
         for idx, pair in enumerate(pairs):
             merges[pair] = 256 + i*per_time + idx
-        ids = replace(ids, merges)
+        for i, chunked_id in enumerate(ids):
+            ids[i] = replace(chunked_id, merges)
+    ids = [item for sublist in ids for item in sublist]
     return ids, merges
 
 
-class BasicTokenizer:
+class Tokenizer:
 
     def train(self, text, vocab_size):
         self.text = text
         self.vocab_size = vocab_size
         self.ids, self.merges = compress(
-            list(map(int, text.encode('utf8'))), vocab_size)
+            text, vocab_size)
 
     def load(self, filename):
         result = {}
@@ -122,7 +130,7 @@ def test_encode_decode():
     text = "ABCDEF"
     merges = {(65, 66): 256, (256, 67): 257, (257, 68)
                : 258, (258, 69): 259, (259, 70): 260}
-    bt = BasicTokenizer()
+    bt = Tokenizer()
     bt.merges = merges
     encoded = bt.encode(text)
     assert (len(encoded) == 1)
@@ -133,10 +141,10 @@ def test_encode_decode():
 test_encode_decode()
 test_replace()
 
-bt = BasicTokenizer()
+bt = Tokenizer()
 # bt.load("txtfiles/1500shakespearetokens.txt")
 text = get_text("txtfiles/shortinput.txt")
-bt.train(text, 300)
+bt.train(text, 500)
 encoded = bt.encode(text)
 print(
     f"Text length: {len(text)}, Tokenized text length: {len(encoded)}, Compression ratio: {len(encoded)/len(text)}")
