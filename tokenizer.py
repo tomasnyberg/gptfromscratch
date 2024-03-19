@@ -72,9 +72,28 @@ class BasicTokenizer:
             self, 'merges'), "You must train the tokenizer before encoding."
         return decode(tokens, self.merges)
 
+    def visualize_compression(self, filename = None):
+        assert hasattr(
+            self, 'merges'), "You must train the tokenizer before visualizing."
+        vocab = {idx: idx for idx in range(256)}
+        for (p0, p1), idx in self.merges.items():
+            vocab[idx] = (p0, p1)
+            # vocab[idx] = vocab[p0] + vocab[p1]
+        def find(x):
+            print(x)
+            if x <= 255:
+                return repr(bytes([x]).decode('utf8', errors='replace'))
+            return find(vocab[x][0]) + find(vocab[x][1])
+        # print(find(275))
+        print(vocab)
+        for k, v in vocab.items():
+            print(k, find(k))
+
 
 bt = BasicTokenizer()
 bt.train(blogtext, 276)
+print(bt.merges)
+bt.visualize_compression()
 encoded = bt.encode(blogtext)
 decoded = bt.decode(encoded)
 assert blogtext == decoded
