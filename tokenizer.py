@@ -1,9 +1,6 @@
-text = "Ｕｎｉｃｏｄｅ! 🅤🅝🅘🅒🅞🅓🅔‽ 🇺‌🇳‌🇮‌🇨‌🇴‌🇩‌🇪! 😄 The very name strikes fear and awe into the hearts of programmers worldwide. We all know we ought to “support Unicode” in our software (whatever that means—like using wchar_t for all the strings, right?). But Unicode can be abstruse, and diving into the thousand-page Unicode Standard plus its dozens of supplementary annexes, reports, and notes can be more than a little intimidating. I don’t blame programmers for still finding the whole thing mysterious, even 30 years after Unicode’s inception."
-tokens = list(map(int, text.encode('utf8')))
-
-with open('blogpost.txt', 'r') as f:
-    blogtext = f.read()
-    blogtokens = list(map(int, blogtext.encode('utf8')))
+def get_text(filename):
+    with open(filename, 'r') as f:
+        return f.read()
 
 
 def most_frequent_pair(s):
@@ -60,7 +57,8 @@ class BasicTokenizer:
     def train(self, text, vocab_size):
         self.text = text
         self.vocab_size = vocab_size
-        self.ids, self.merges = compress(list(map(int, text.encode('utf8'))), vocab_size)
+        self.ids, self.merges = compress(
+            list(map(int, text.encode('utf8'))), vocab_size)
 
     def encode(self, text):
         assert hasattr(
@@ -72,12 +70,13 @@ class BasicTokenizer:
             self, 'merges'), "You must train the tokenizer before encoding."
         return decode(tokens, self.merges)
 
-    def visualize_compression(self, filename = None):
+    def visualize_compression(self, filename=None):
         assert hasattr(
             self, 'merges'), "You must train the tokenizer before visualizing."
         vocab = {idx: idx for idx in range(256)}
         for (p0, p1), idx in self.merges.items():
             vocab[idx] = (p0, p1)
+
         def find(x):
             if x <= 255:
                 decoded = bytes([x]).decode('utf8', errors='replace')
@@ -92,8 +91,9 @@ class BasicTokenizer:
 
 
 bt = BasicTokenizer()
-bt.train(blogtext, 500)
-bt.visualize_compression("tokens.txt")
-encoded = bt.encode(blogtext)
+text = get_text("txtfiles/blogpost.txt")
+bt.train(text, 500)
+bt.visualize_compression("txtfiles/tokens.txt")
+encoded = bt.encode(text)
 decoded = bt.decode(encoded)
-assert blogtext == decoded
+assert text == decoded
